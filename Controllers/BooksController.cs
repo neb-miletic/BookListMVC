@@ -6,29 +6,38 @@ using BookListMVC.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-// For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace BookListMVC.Controllers
 {
     public class BooksController : Controller
     {
-
-
         private readonly ApplicationDbContext _db;
-
-
         [BindProperty]
         public Book Book { get; set; }
-
         public BooksController(ApplicationDbContext db)
         {
             _db = db;
         }
 
-        // GET: /<controller>/
         public IActionResult Index()
         {
             return View();
+        }
+
+        public IActionResult Upsert(int? id)
+        {
+            Book = new Book();
+            if (id == null)
+            {
+                //create
+                return View(Book);
+            }
+            //update
+            Book = _db.Books.FirstOrDefault(u => u.Id == id);
+            if (Book == null)
+            {
+                return NotFound();
+            }
+            return View(Book);
         }
 
         [HttpPost]
@@ -42,7 +51,6 @@ namespace BookListMVC.Controllers
                     //create
                     _db.Books.Add(Book);
                 }
-
                 else
                 {
                     _db.Books.Update(Book);
@@ -50,29 +58,10 @@ namespace BookListMVC.Controllers
                 _db.SaveChanges();
                 return RedirectToAction("Index");
             }
-            return View();
-        }
-
-        public IActionResult Upsert(int? id)
-        {
-            Book = new Book();
-            if (id == null)
-            {
-                //create
-                return View(Book);
-            }
-
-            //update
-            Book = _db.Books.FirstOrDefault(u => u.Id == 0);
-            if (Book == null)
-            {
-                return NotFound();
-            }
             return View(Book);
         }
+
         #region API Calls
-
-
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -85,18 +74,12 @@ namespace BookListMVC.Controllers
             var bookFromDb = await _db.Books.FirstOrDefaultAsync(u => u.Id == id);
             if (bookFromDb == null)
             {
-                return Json(new { success = false, message = "Error whle deleting" });
+                return Json(new { success = false, message = "Error while Deleting" });
             }
-
             _db.Books.Remove(bookFromDb);
             await _db.SaveChangesAsync();
             return Json(new { success = true, message = "Delete successful" });
         }
-
-
-
         #endregion
-
-
     }
 }
